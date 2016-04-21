@@ -12,9 +12,6 @@ const options = {
   rejectUnauthorized: false,
   // This is necessary only if the server uses the self-signed certificate
   ca: fs.readFileSync(SECURE_CSR),
-  username:'jdavid', 
+  username:'jdavid',
   password:"abc123"
 };
-var client  = mqtt.connect('mqtt://localhost', options);
-//var client  = mqtt.connect('mqtt://localhost', {username:'jdavid', password:"abc123"});
-client.publish("url", "data");
