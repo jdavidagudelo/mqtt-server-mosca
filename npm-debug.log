@@ -1,0 +1,113 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/bin/node', '/usr/local/bin/npm', 'publish' ]
+2 info using npm@1.4.29
+3 info using node@v0.10.42
+4 warn deprecated This version of npm lacks support for important features,
+5 warn deprecated such as scoped packages, offered by the primary npm
+6 warn deprecated registry. Consider upgrading to at least npm@2, if not the
+7 warn deprecated latest stable version. To upgrade to npm@2, run:
+8 warn deprecated npm -g install npm@latest-2
+9 warn deprecated To upgrade to the latest stable version, run:
+10 warn deprecated npm -g install npm@latest
+11 warn deprecated (Depending on how Node.js was installed on your system, you
+12 warn deprecated may need to prefix the preceding commands with `sudo`, or if
+13 warn deprecated on Windows, run them from an Administrator prompt.)
+14 warn deprecated If you're running the version of npm bundled with
+15 warn deprecated Node.js 0.10 LTS, be aware that the next version of 0.10 LTS
+16 warn deprecated will be bundled with a version of npm@2, which has some small
+17 warn deprecated backwards-incompatible changes made to `npm run-script` and
+18 warn deprecated semver behavior.
+19 verbose publish [ '.' ]
+20 verbose cache add [ '.', null ]
+21 verbose cache add name=undefined spec="." args=[".",null]
+22 verbose parsed url { protocol: null,
+22 verbose parsed url   slashes: null,
+22 verbose parsed url   auth: null,
+22 verbose parsed url   host: null,
+22 verbose parsed url   port: null,
+22 verbose parsed url   hostname: null,
+22 verbose parsed url   hash: null,
+22 verbose parsed url   search: null,
+22 verbose parsed url   query: null,
+22 verbose parsed url   pathname: '.',
+22 verbose parsed url   path: '.',
+22 verbose parsed url   href: '.' }
+23 silly lockFile 3a52ce78- .
+24 verbose lock . /home/ubidotsjd/.npm/3a52ce78-.lock
+25 verbose tar pack [ '/home/ubidotsjd/.npm/UbidotsMoscaServer/1.0.0/package.tgz',
+25 verbose tar pack   '.' ]
+26 verbose tarball /home/ubidotsjd/.npm/UbidotsMoscaServer/1.0.0/package.tgz
+27 verbose folder .
+28 info prepublish UbidotsMoscaServer@1.0.0
+29 silly lockFile 1f1177db-tar tar://.
+30 verbose lock tar://. /home/ubidotsjd/.npm/1f1177db-tar.lock
+31 silly lockFile 66f97035-otsMoscaServer-1-0-0-package-tgz tar:///home/ubidotsjd/.npm/UbidotsMoscaServer/1.0.0/package.tgz
+32 verbose lock tar:///home/ubidotsjd/.npm/UbidotsMoscaServer/1.0.0/package.tgz /home/ubidotsjd/.npm/66f97035-otsMoscaServer-1-0-0-package-tgz.lock
+33 silly lockFile 1f1177db-tar tar://.
+34 silly lockFile 1f1177db-tar tar://.
+35 silly lockFile 66f97035-otsMoscaServer-1-0-0-package-tgz tar:///home/ubidotsjd/.npm/UbidotsMoscaServer/1.0.0/package.tgz
+36 silly lockFile 66f97035-otsMoscaServer-1-0-0-package-tgz tar:///home/ubidotsjd/.npm/UbidotsMoscaServer/1.0.0/package.tgz
+37 silly lockFile f3a1786b-UbidotsMoscaServer-1-0-0-package /home/ubidotsjd/.npm/UbidotsMoscaServer/1.0.0/package
+38 verbose lock /home/ubidotsjd/.npm/UbidotsMoscaServer/1.0.0/package /home/ubidotsjd/.npm/f3a1786b-UbidotsMoscaServer-1-0-0-package.lock
+39 silly lockFile f3a1786b-UbidotsMoscaServer-1-0-0-package /home/ubidotsjd/.npm/UbidotsMoscaServer/1.0.0/package
+40 silly lockFile f3a1786b-UbidotsMoscaServer-1-0-0-package /home/ubidotsjd/.npm/UbidotsMoscaServer/1.0.0/package
+41 silly lockFile 3a52ce78- .
+42 silly lockFile 3a52ce78- .
+43 silly publish { name: 'UbidotsMoscaServer',
+43 silly publish   version: '1.0.0',
+43 silly publish   description: 'Mosca Server Ubidots.',
+43 silly publish   main: 'UbidotsMoscaServer.js',
+43 silly publish   directories: { test: 'tests' },
+43 silly publish   scripts: { test: 'echo "Error: no test specified" && exit 1' },
+43 silly publish   repository: { type: 'git', url: 'none' },
+43 silly publish   keywords: [ 'mosca', 'server', 'mqtt' ],
+43 silly publish   author: { name: 'jdavidagudelo' },
+43 silly publish   license: 'GPL',
+43 silly publish   gitHead: 'f0362124d1a922379839d50018aa383f139c5791',
+43 silly publish   readme: 'ERROR: No README data found!',
+43 silly publish   _id: 'UbidotsMoscaServer@1.0.0',
+43 silly publish   _shasum: 'd9d52a2f331e9162c897a7ea9632ab7eb6deda92',
+43 silly publish   _from: '.' }
+44 verbose request where is /UbidotsMoscaServer
+45 verbose request registry https://registry.npmjs.org/
+46 verbose request id 7a56f9557ee92c14
+47 verbose url raw /UbidotsMoscaServer
+48 verbose url resolving [ 'https://registry.npmjs.org/', './UbidotsMoscaServer' ]
+49 verbose url resolved https://registry.npmjs.org/UbidotsMoscaServer
+50 verbose request where is https://registry.npmjs.org/UbidotsMoscaServer
+51 info trying registry request attempt 1 at 09:46:55
+52 http PUT https://registry.npmjs.org/UbidotsMoscaServer
+53 http 403 https://registry.npmjs.org/UbidotsMoscaServer
+54 verbose headers { 'content-type': 'application/json',
+54 verbose headers   'cache-control': 'max-age=300',
+54 verbose headers   'content-length': '95',
+54 verbose headers   'accept-ranges': 'bytes',
+54 verbose headers   date: 'Fri, 22 Apr 2016 14:47:02 GMT',
+54 verbose headers   via: '1.1 varnish',
+54 verbose headers   connection: 'keep-alive',
+54 verbose headers   'x-served-by': 'cache-atl6248-ATL',
+54 verbose headers   'x-cache': 'MISS',
+54 verbose headers   'x-cache-hits': '0',
+54 verbose headers   'x-timer': 'S1461336421.447319,VS0,VE991',
+54 verbose headers   vary: 'Accept-Encoding' }
+55 error publish Failed PUT 403
+56 error Error: "You cannot publish over the previously published version 1.0.0." : UbidotsMoscaServer
+56 error     at RegClient.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:308:14)
+56 error     at Request._callback (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:246:65)
+56 error     at Request.self.callback (/usr/local/lib/node_modules/npm/node_modules/request/request.js:236:22)
+56 error     at Request.emit (events.js:98:17)
+56 error     at Request.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1142:14)
+56 error     at Request.emit (events.js:117:20)
+56 error     at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1096:12)
+56 error     at IncomingMessage.emit (events.js:117:20)
+56 error     at _stream_readable.js:944:16
+56 error     at process._tickCallback (node.js:448:13)
+57 error If you need help, you may report this *entire* log,
+57 error including the npm and node versions, at:
+57 error     <http://github.com/npm/npm/issues>
+58 error System Linux 4.2.0-30-generic
+59 error command "/usr/local/bin/node" "/usr/local/bin/npm" "publish"
+60 error cwd /home/ubidotsjd/JavascriptProjects/MoscaTest
+61 error node -v v0.10.42
+62 error npm -v 1.4.29
+63 verbose exit [ 1, true ]
