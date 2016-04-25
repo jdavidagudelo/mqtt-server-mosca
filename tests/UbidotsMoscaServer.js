@@ -1,5 +1,6 @@
 var server = require("../UbidotsMoscaServer");
 var assert = require('chai').assert;
+var util = require('util');
 var pg = require('pg');
 var testsCount = 100;
 String.prototype.repeat = function (num)
@@ -133,7 +134,7 @@ describe('Topic Validations', function () {
             for (var i = 0; i < testsCount; i++) {
                 var dataSource = randomToken();
                 var variable = randomToken();
-                var topic = "/v1.6/thg/" + dataSource + "/" + variable + "/value/post/";
+                var topic = util.format("/v1.6/thg/%s/%s/value/post", dataSource, variable);
                 assert.equal(true, server.isPublishValuePostUrl(topic));
             }
         });
@@ -154,7 +155,7 @@ describe('Topic Validations', function () {
                 var dataSource = randomToken();
                 var variable = randomToken();
                 var token = randomToken();
-                var topic = "/v1.6/thg/" + token + "/" + dataSource + "/" + variable + "/value/lv";
+                var topic = util.format("/v1.6/thg/%s/%s/%s/value/lv", token, dataSource, variable);
                 assert.equal(false, server.isPublishSubscribeValue(topic));
             }
         });
@@ -162,7 +163,7 @@ describe('Topic Validations', function () {
             for (var i = 0; i < testsCount; i++) {
                 var dataSource = randomToken();
                 var variable = randomToken();
-                var topic = "/v1.6/thg/" + dataSource + "/" + variable + "/value/post/";
+                var topic = util.format("/v1.6/thg/%s/%s/value/post", dataSource, variable);
                 assert.equal(false, server.isPublishSubscribeValue(topic));
             }
         });
@@ -173,7 +174,7 @@ describe('Topic Validations', function () {
                 var dataSource = randomToken();
                 var variable = randomToken();
                 var token = randomToken();
-                var topic = "/v1.6/thg/" + token + "/" + dataSource + "/" + variable + "/value/";
+                var topic = util.format("/v1.6/thg/%s/%s/%s/value", token, dataSource, variable);
                 assert.equal(true, server.isPublishSubscribeValue(topic));
             }
         });
@@ -194,7 +195,7 @@ describe('Topic Validations', function () {
                 var dataSource = randomToken();
                 var variable = randomToken();
                 var token = randomToken();
-                var topic = "/v1.6/thg/" + token + "/" + dataSource + "/" + variable + "/value/";
+                var topic = util.format("/v1.6/thg/%s/%s/%s/value", token, dataSource, variable);
                 assert.equal(false, server.isPublishSubscribeLastValue(topic));
             }
         });
@@ -202,7 +203,7 @@ describe('Topic Validations', function () {
             for (var i = 0; i < testsCount; i++) {
                 var dataSource = randomToken();
                 var variable = randomToken();
-                var topic = "/v1.6/thg/" + dataSource + "/" + variable + "/value/post/";
+                var topic = util.format("/v1.6/thg/%s/%s/value/post/", dataSource, variable);
                 assert.equal(false, server.isPublishSubscribeLastValue(topic));
             }
         });
@@ -213,7 +214,7 @@ describe('Topic Validations', function () {
                 var dataSource = randomToken();
                 var variable = randomToken();
                 var token = randomToken();
-                var topic = "/v1.6/thg/" + token + "/" + dataSource + "/" + variable + "/value/lv";
+                var topic = util.format("/v1.6/thg/%s/%s/%s/value/lv", token, dataSource, variable);
                 assert.equal(true, server.isPublishSubscribeLastValue(topic));
             }
         });

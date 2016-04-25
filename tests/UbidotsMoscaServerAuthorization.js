@@ -65,9 +65,7 @@ describe('Test Authorization Publish', function () {
                                     });
                         }
                     });
-
         });
-
     });
 
     afterEach(function (done) {
@@ -117,7 +115,7 @@ describe('Test Authorization Publish', function () {
                         var dataSource = randomToken();
                         var variable = randomToken();
                         var value = Math.random() * 100000;
-                        
+
                         client.publish("/v1.6/thg/" + dataSource + "/" + variable + "/value/post", value.toString(), {'qos': 1, 'retain': false}, function (error, response) {
                             assert.equal(response.qos, 1);
                             assert.equal(error, null);

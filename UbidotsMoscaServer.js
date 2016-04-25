@@ -30,6 +30,11 @@ var publishSuscribeValueRegex = /\/v1.6\/thg\/[0-9a-z_]+\/[0-9a-z_]+\/[0-9a-z_]+
  */
 var mqttServerUrl = 'mqtt://localhost';
 /**
+ * URL Of the translate service.
+ * @type String
+ */
+var translateUrl = 'http://translate.ubidots.com:9080/things/';
+/**
  * ID of the redis database used to store information required by the broker.
  * @type Number
  */
@@ -84,7 +89,9 @@ var ascoltatore = {
     return_buffers: true,
     host: "localhost"
 };
-
+/**
+ * Mosca Settings.
+ */
 var moscaSettings = {
     port: 1883,
     backend: ascoltatore,
@@ -429,7 +436,7 @@ function sendDataToTranslate(data) {
     });
     var options = {
         method: 'POST',
-        uri: 'http://translate.ubidots.com:9080/things/' + data.dataSource + '/' + data.variable + '/values?token=' + data.token,
+        uri: translateUrl + data.dataSource + '/' + data.variable + '/values?token=' + data.token,
         body: value,
         headers: {
             'content-type': 'application/json'
