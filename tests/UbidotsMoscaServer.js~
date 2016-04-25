@@ -1,2 +1,0 @@
-var server = require("UbidotsMoscaServer")
-console.log(server.validSubscribeValueToken(null));

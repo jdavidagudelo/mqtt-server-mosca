@@ -1,7 +1,7 @@
 var server = require("../UbidotsMoscaServer");
 var assert = require('chai').assert;
 var pg = require('pg');
-var testsCount = 10;
+var testsCount = 100;
 String.prototype.repeat = function (num)
 {
     return new Array(num + 1).join(this);

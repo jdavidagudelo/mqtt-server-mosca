@@ -1,8 +1,29 @@
 var mosca = require('mosca');
+var util = require("util");
 var mqtt = require("mqtt");
 var pg = require('pg');
 var redis = require("redis");
 var request = require('request');
+/**
+ * Regex to test a valid publish or susbcribe value topic.
+ * @type RegExp
+ */
+var publishSuscribeLastValueRegex = /\/v1.6\/thg\/[0-9a-z_]+\/[0-9a-z_]+\/[0-9a-z_]+\/value\/lv\/?/i;
+/**
+ * Regex to test a valid redis topic.
+ * @type RegExp
+ */
+var regexRedisTopic = /rt\/variables\/[a-z0-9_]+\/last_value/i;
+/**
+ * Regex to test a valid publish value topic.
+ * @type RegExp
+ */
+var publishValueRegex = /\/v1.6\/thg\/[0-9a-z_]+\/[0-9a-z_]+\/value\/post\/?/i;
+/**
+ * Regex to test a valid subscribe or publish value topic.
+ * @type RegExp
+ */
+var publishSuscribeValueRegex = /\/v1.6\/thg\/[0-9a-z_]+\/[0-9a-z_]+\/[0-9a-z_]+\/value\/?/i;
 /**
  * url of the broker.
  * @type String
@@ -40,9 +61,17 @@ var conString = "postgres://ubidots:ubidotsDevel@localhost/ubidots_devel1";
 var tokenSeconds = 21600;
 
 redisClient.select(redisDatabase);
-redisClient.on("Error", function (err) {
+
+/**
+ * The redis error handling function.
+ * @param {type} err
+ */
+function redisError(err) {
     console.log("Error " + err);
-});
+}
+
+redisClient.on("Error", redisError);
+
 /**
  * Backed configuration. Mosca uses a redis database and uses database with id 12.
  * @type Module redis|Module redis
@@ -63,6 +92,7 @@ var moscaSettings = {
         factory: mosca.persistence.Redis
     }
 };
+
 /**
  * Authennticates that a client is allowed to connect to the broker.
  * @param {type} client the client that wants to connect to the broker.
@@ -75,11 +105,6 @@ var moscaSettings = {
  * the connection is terminated.
  */
 var authenticate = function (client, username, password, callback) {
-    /*  if(true){
-     redisClient.set("user:"+client.id, "NRmyIOPJGkmXOc0Ah93PA2SylvNysZ", redis.print);
-     callback(null, true);
-     return;
-     }*/
     pg.connect(conString, function (err, postgresClient, done) {
         if (err) {
             return console.error('Error fetching client from pool', err);
@@ -111,6 +136,7 @@ var authenticate = function (client, username, password, callback) {
         });
     });
 };
+
 /**
  * This method validates if a client can subscribe to an specific topic.
  * @param {type} client the client that wishes to subscribe to a topic.
@@ -146,6 +172,7 @@ function authorizeSubscribe(client, topic, callback) {
         callback(null, false);
     }
 }
+
 /**
  * Authorizes a client to publish information to a topic.
  * @param {type} client the client that wishes to publish data.
@@ -193,7 +220,12 @@ function authorizePublish(client, topic, payload, callback) {
 
 var server = new mosca.Server(moscaSettings);
 server.on('ready', setup);
-server.on('clientDisconnected', function (client) {
+
+/**
+ * Clears a client's data from the redis database.
+ * @param {type} client
+ */
+function clearClientData(client) {
     if (client !== null && client !== undefined) {
         redisClient.get("user:" + client.id, function (err, username) {
             redisClient.del("user:" + client.id);
@@ -210,7 +242,10 @@ server.on('clientDisconnected', function (client) {
 
         });
     }
-});
+}
+
+server.on('clientDisconnected', clearClientData);
+
 /**
  * Removes any information stored in redis about a client that is just disconnected from the broker.
  * @param {type} client the client.
@@ -240,18 +275,41 @@ function removeRedisSubscribeInfo(client, username, canRemoveUsername) {
     });
 }
 
-server.on('clientConnected', function (client) {
-});
+/**
+ * Function executed when a client connects to the server. 
+ * Does nothing by defaut.
+ * @param {type} client the client connected to the server.
+ */
+function clientConnected(client) {
 
-server.on('subscribed', function (topic, client) {
+}
+
+server.on('clientConnected', clientConnected);
+
+/**
+ * Subscribes a client to the redis database, to listen when last value is updated.
+ * @param {type} topic The topic to which the client wants to subscribe to.
+ * It should be of the form: /v1.6/thg/token/datasource/variable/value/lv or /v1.6/thg/token/datasource/variable/value
+ * where token is the user's token, variable the variable's label, and the datasource's label.
+ * @param {type} client the client that subscribed to the specified topic.
+ */
+function subscribeClient(topic, client) {
     var variableId = 'xxx';
     redisClient.get("user:" + client.id, function (err, token) {
         subscribeToRedisLastValue(variableId, token, client.id);
         redisClient.set("topic:" + variableId + ":" + token, topic);
     });
-});
+}
 
-server.on('published', function (packet, client) {
+server.on('subscribed', subscribeClient);
+
+/**
+ * Publish the result of a message published to ubidots. It does something only when the topic
+ * corresponds to the post value topic.
+ * @param {type} packet contains the topic and the payload.
+ * @param {type} client the client that published the value.
+ */
+function publishToUbidots(packet, client) {
     if (isPublishValuePostUrl(packet.topic)) {
         if (client !== undefined) {
             redisClient.get("user:" + client.id, function (err, reply) {
@@ -261,7 +319,9 @@ server.on('published', function (packet, client) {
             });
         }
     }
-});
+}
+
+server.on('published', publishToUbidots);
 server.authenticate = authenticate;
 server.authorizePublish = authorizePublish;
 server.authorizeSubscribe = authorizeSubscribe;
@@ -290,45 +350,79 @@ function validPublishValuePostToken(token) {
 function validSubscribeLastValueToken(token) {
     return token !== null && token !== undefined;
 }
+/**
+ * Test if the specified token is the ubidots token.
+ * @param {type} token token to validate.
+ * @returns {Boolean} true if the token corresponds to the 
+ * default token of ubidots to publish values.
+ */
 function validPublishLastValueToken(token) {
     return token !== null && token !== undefined && token === TOKEN_UBIDOTS;
 }
+
+/**
+ * 
+ * @param {type} token
+ * @returns {Boolean}
+ */
 function validSubscribeValueToken(token) {
     return token !== null && token !== undefined;
 }
+/**
+ * 
+ * @param {type} token
+ * @returns {Boolean}
+ */
 function validPublishValueToken(token) {
     return token !== null && token !== undefined && token === TOKEN_UBIDOTS;
 }
 /**
  * Determines if the topic corresponds to the subscribe or publish the last value.
  * @param {type} topic the topic to be tested.
- * @returns {Boolean} true if the topic is of the form:
+ * @returns {Boolean} true if the topic is of the form: /v1.6/thg/token/datasource/variable/value/lv where
+ * token, datasource and variable correspond to the user's token, the datasource's label and the variable's label.
  */
 function isPublishSubscribeLastValue(topic) {
-    var publishSuscribeLastValueRegex = /\/v1.6\/thg\/[0-9a-z_]+\/[0-9a-z_]+\/[0-9a-z_]+\/value\/lv\/?/gi;
     var r = publishSuscribeLastValueRegex.exec(topic);
     if (r === null || r === undefined) {
         return false;
     }
     return r[0] === r['input'];
 }
-
+/**
+ * Determines if topic corresponds to the subscribe or publish value topic.
+ * @param {type} topic topic to be tested.
+ * @returns {Boolean} true if the topic is of the form: /v1.6/thg/token/datasource/variable/value where 
+ * token, datasource and variable correspond to the user's token, the datasource's label and the variable's label.
+ */
 function isPublishSubscribeValue(topic) {
-    var publishSuscribeValueRegex = /\/v1.6\/thg\/[0-9a-z_]+\/[0-9a-z_]+\/[0-9a-z_]+\/value\/?/gi;
     var r = publishSuscribeValueRegex.exec(topic);
     if (r === null || r === undefined) {
         return false;
     }
     return r[0] === r['input'];
 }
+/**
+ * Determines if the topic corresponds to the publish value topic.
+ * @param {type} topic the topic to be tested.
+ * @returns {Boolean} true if the topic if of the form: /v1.6/thg/datasource/variable/value/post where
+ * datasource and variable correspond to the datasources's label and the variable's label.
+ */
 function isPublishValuePostUrl(topic) {
-    var publishValueRegex = /\/v1.6\/thg\/[0-9a-z_]+\/[0-9a-z_]+\/value\/post\/?/gi;
     var r = publishValueRegex.exec(topic);
     if (r === null || r === undefined) {
         return false;
     }
     return r[0] === r['input'];
 }
+/**
+ * Send a value to the translate service using a post web service.
+ * @param {type} data data is a dictionary with the dataSource, variable, token and value keys.
+ * dataSource: the label of the datasource.
+ * variable: the label of the variable.
+ * token: the token of the user.
+ * value: the value to be posted to ubidots.
+ */
 function sendDataToTranslate(data) {
     var value = JSON.stringify({
         'value': parseFloat(data.value)
@@ -347,7 +441,11 @@ function sendDataToTranslate(data) {
         }
     });
 }
-
+/**
+ * Send a value to the translate service.
+ * @param {type} packet the packet published. Includes the topic and the payload.
+ * @param {type} token the token of the user.
+ */
 function publishValue(packet, token) {
     var x = packet.topic.toString().split("/");
     var labelDataSource = x[3];
@@ -388,8 +486,13 @@ function subscribeToRedisLastValue(variableId, token, clientId) {
         }
     });
 }
-redisSubscriber.on("message", function (channel, message) {
-    var regexRedisTopic = /rt\/variables\/[a-z0-9_]+\/last_value/gi;
+
+/**
+ * Publish message published by redis to the broker subscribers.
+ * @param {type} channel the topic in redis.
+ * @param {type} message the message payload.
+ */
+function receiveRedisMessage(channel, message) {
     var r = regexRedisTopic.exec(channel);
     if (r !== null && r[0] === r['input']) {
         var split = channel.split("/");
@@ -411,7 +514,9 @@ redisSubscriber.on("message", function (channel, message) {
             }
         });
     }
-});
+}
+
+redisSubscriber.on("message", receiveRedisMessage);
 /**
  * Broadcasts value received from redis to all subscribers of the specified topic.
  * @param {type} topic the topic to publish the value to.
@@ -428,8 +533,8 @@ function publishLastValue(topic, value) {
     });
 }
 /**
-* Exporting functions to perform unit testing.
-*/
+ * Exporting functions to perform unit testing.
+ */
 exports.isPublishSubscribeLastValue = isPublishSubscribeLastValue;
 exports.isPublishSubscribeValue = isPublishSubscribeValue;
 exports.isPublishValuePostUrl = isPublishValuePostUrl;
@@ -447,4 +552,3 @@ exports.validPublishValuePostToken = validPublishValuePostToken;
 exports.validSubscribeLastValueToken = validSubscribeLastValueToken;
 exports.validSubscribeValueToken = validSubscribeValueToken;
 exports.TOKEN_UBIDOTS = TOKEN_UBIDOTS;
-

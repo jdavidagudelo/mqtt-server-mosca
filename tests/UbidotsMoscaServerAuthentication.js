@@ -24,7 +24,8 @@ function randomToken() {
 function updateTokens(token, maxTokens, client, done) {
     tokens.push(token);
     if (tokens.length === maxTokens) {
-        client.end();
+        client.end(true, function () {
+        });
         done();
     }
 }
@@ -32,8 +33,9 @@ function updateTokens(token, maxTokens, client, done) {
 function removeToken(result, client, done) {
     tokens.pop(result);
     if (tokens.length === 0) {
-        client.end();
         tokensString = [];
+        client.end(true, function () {
+        });
         done();
     }
 }
@@ -45,19 +47,29 @@ describe('Test Authentication', function () {
             if (err) {
                 return console.error('could not connect to postgres', err);
             }
-            for (var i = 0; i < tokensCount; i++) {
-                var userId = 1;
-                var token = randomToken();
-                client.query("insert into apikey_token(user_id, token, last_used, expires, name) values($1, $2, $3, $4, $5) RETURNING id;",
-                        [userId, token, new Date(), true, "newName"],
-                        function (err, result) {
-                            if (err) {
-                                return console.error('error running query', err);
-                            }
-                            tokensString.push(token);
-                            updateTokens(result, tokensCount, client, done);
-                        });
-            }
+
+            client.query("delete from apikey_token where id > 39;",
+                    [],
+                    function (err, result) {
+                        if (err) {
+                            return console.error('error running query', err);
+                        }
+                        for (var i = 0; i < tokensCount; i++) {
+                            var userId = 1;
+                            var token = randomToken();
+                            (function (token) {
+                                client.query("insert into apikey_token(user_id, token, last_used, expires, name) values($1, $2, $3, $4, $5) RETURNING id;",
+                                        [userId, token, new Date(), true, "newName"],
+                                        function (err, result) {
+                                            if (err) {
+                                                return console.error('error running query', err);
+                                            }
+                                            tokensString.push(token);
+                                            updateTokens(result, tokensCount, client, done);
+                                        });
+                            })(token);
+                        }
+                    });
         });
 
     });
@@ -93,15 +105,21 @@ describe('Test Authentication', function () {
             validTokensDone = false;
             for (var i = 0; i < tokensString.length; i++) {
                 var token = tokensString[i];
-                var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
-                client.on("connect", function (connack) {
-                    assert.notEqual(connack, null);
-                    doneTokensValidation(token, done);
-                });
-                client.on("error", function (error) {
-                    assert.equal(null, error);
-                    doneTokensValidation(token, done);
-                });
+                (function (token) {
+                    var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
+                    client.on("connect", function (connack) {
+                        assert.notEqual(connack, null);
+                        client.end(false, function () {
+                            doneTokensValidation(token, done);
+                        });
+                    });
+                    client.on("error", function (error) {
+                        assert.equal(null, error);
+                        client.end(true, function () {
+                            doneTokensValidation(token, done);
+                        });
+                    });
+                })(token);
             }
         });
     });
@@ -136,23 +154,28 @@ describe('Test Authentication', function () {
         });
         it('Should Not Allow Succesful Authentication To Non Existing Tokens.', function (done) {
             invalidDone = false;
+            invalidTestsCount = testsCount;
             for (var i = 0; i < testsCount; i++) {
                 var token = randomToken();
-                if (tokensString.indexOf(token) < 0) {
-                    var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
-                    client.on("connect", function (connack) {
-                        assert.equal(null, connack);
-                        client.end();
-                        doneInvalidTokens(token, done);
-                    });
-                    client.on("error", function (error) {
-                        assert.notEqual(error, null);
-                        doneInvalidTokens(token, done);
-                    });
-                }
-                else{
-                    invalidTestsCount--;
-                }
+                (function (token) {
+                    if (tokensString.indexOf(token) < 0) {
+                        var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
+                        client.on("connect", function (connack) {
+                            assert.equal(null, connack);
+                            client.end(true, function () {
+                                doneInvalidTokens(token, done);
+                            });
+                        });
+                        client.on("error", function (error) {
+                            assert.notEqual(error, null);
+                            client.end(true, function () {
+                                doneInvalidTokens(token, done);
+                            });
+                        });
+                    } else {
+                        invalidTestsCount--;
+                    }
+                })(token);
             }
         });
     });
