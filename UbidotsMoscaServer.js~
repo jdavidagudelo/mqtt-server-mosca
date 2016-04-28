@@ -41,6 +41,7 @@ var conString = "postgres://ubidots:ubidotsDevel@localhost/ubidots_devel1";
  * @type Number
  */
 var tokenSeconds = 21600;
+
 redisClient.select(redisDatabase);
 redisSubscriber.select(redisSubscriberDatabase);
 
@@ -310,7 +311,6 @@ server.on('subscribed', subscribeClient);
  * corresponds to the post value topic.
  * @param {type} packet contains the topic and the payload.
  * @param {type} client the client that published the value.
- * @param {type} callback callback to indicate the publication is succesful.
  */
 function publishToUbidots(packet, client, callback) {
     if (validator.isPublishValuePostUrl(packet.topic)) {
@@ -327,7 +327,6 @@ function publishToUbidots(packet, client, callback) {
 	}
     }
 }
-
 /**
 * This way the client must wait until the ubidots server replies.
 */
@@ -355,7 +354,6 @@ function setup() {
  * variable: the label of the variable.
  * token: the token of the user.
  * value: the value to be posted to ubidots.
- * @param {type} callback callback to indicate the publication is succesful.
  */
 function sendDataToTranslate(data, callback) {
     var uri = encodeURI(translateUrl + data.dataSource + '/' + data.variable + '/values?token=' + data.token);
@@ -377,7 +375,6 @@ function sendDataToTranslate(data, callback) {
  * Send a value to the translate service.
  * @param {type} packet the packet published. Includes the topic and the payload.
  * @param {type} token the token of the user.
- * @param {type} callback callback to indicate the publication is succesful.
  */
 function publishValue(packet, token, callback) {
     var x = packet.topic.toString().split("/");

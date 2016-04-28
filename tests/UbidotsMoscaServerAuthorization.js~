@@ -1,0 +1,153 @@
+var server = require("../Validator");
+var assert = require('chai').assert;
+var pg = require('pg');
+var testsCount = 10000;
+var mqtt = require("mqtt");
+var conString = "postgres://ubidots:ubidotsDevel@localhost/ubidots_devel1";
+var tokens = [];
+var tokensCount = 100;
+var tokensString = [];
+var invalidTokens = [];
+var tokensAuthorizedPublish = [];
+var invalidTestsCount = testsCount;
+var validTokensDone = false;
+var invalidTokensDone = false;
+var currentToken = "yTJGljSpPt7GNJmUc4TtQQfwwamv6I";
+String.prototype.repeat = function (num)
+{
+    return new Array(num + 1).join(this);
+};
+
+var MAX_UNICODE_CHAR = 65535;
+var regexInvalid = /[\s\/,\?:@&=+\$#]+/i;
+function randomUnicode() {
+    var max = 60;
+    var n = Math.floor((Math.random() * max)) + 1;
+    var r = "";
+    for (var i = 0; i < n; i++) {
+        var x = String.fromCharCode(Math.floor((Math.random() * MAX_UNICODE_CHAR)) + 1);
+        if (!regexInvalid.test(x)) {
+            r += x;
+        }
+    }
+    return r;
+}
+function randomToken() {
+    var n = Math.floor((Math.random() * 10)) + 1;
+    return Math.random().toString(36).slice(2).repeat(n).substring(0, 60);
+}
+function updateTokens(token, maxTokens, client, done) {
+    tokens.push(token);
+    if (tokens.length === maxTokens) {
+        client.end();
+        done();
+    }
+}
+
+function removeToken(result, client, done) {
+    tokens.pop(result);
+    if (tokens.length === 0) {
+        client.end();
+        tokensString = [];
+        done();
+    }
+}
+function updateClient(userId){
+ var client = new pg.Client(conString);
+        client.connect(function (err) {
+            if (err) {
+                return console.error('could not connect to postgres', err);
+            }
+		var token = randomToken();
+		 currentToken = token;
+                            client.query("insert into apikey_token(user_id, token, last_used, expires, name) values($1, $2, $3, $4, $5) RETURNING id;",
+                                    [userId, token, new Date(), true, "newName"],
+                                    function (err, result) {
+                                        if (err) {
+                                            return console.error('error running query', err);
+                                        }
+					done();
+                                    });
+                    });
+}
+
+describe('Test Authorization Publish', function () {
+    beforeEach(function (done) {
+	
+    });
+
+    afterEach(function (done) {
+        done();
+    });
+
+    describe('Valid Tokens To Authorize', function () {
+        it('Should allow user authorized with token to publish a value.', function (done) {
+            this.timeout(0);
+            var count = 0;
+            for (var i = 0; i < tokensCount; i++) {
+                var token = currentToken;
+                (function (token) {
+                    var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
+                    client.on("connect", function (connack) {
+                        assert.notEqual(connack, null);
+                        var dataSource = randomUnicode();
+                        var variable = randomUnicode();
+                        var value = Math.random() * 100000;
+                        var json = JSON.stringify({value: value});
+                        client.publish("/v1.6/thg/" + dataSource + "/" + variable + "/value/post", json.toString(), {'qos': 1, 'retain': false}, function (error, response) {
+                            assert.equal(response.qos, 1);
+                            assert.equal(error, null);
+                            client.end(true, function () {
+                                count++;
+                                if (count >= tokensCount) {
+                                    done();
+                                }
+                            });
+
+                        });
+                    });
+                    client.on("error", function (error) {
+                        assert.equal(null, error);
+                        client.end(true, function () {
+                            count++;
+                            if (count >= tokensCount) {
+                                done();
+                            }
+                        });
+                    });
+                })(token);
+            }
+        });
+        it('Should allow user authorized with token to subscribe to last value updates.', function (done) {
+            done();
+        });
+        it('Should allow user authorized with token to subscribe to value updates.', function (done) {
+            done();
+        });
+        it('Should allow ubidots default user to publish a last value.', function (done) {
+            done();
+
+        });
+        it('Should allow ubidots default user to publish a value.', function (done) {
+            done();
+
+        });
+    });
+    describe('Invalid Token To Authorize', function () {
+        it('Should not allow user with token to subscribe to post value updates.', function (done) {
+            done();
+        });
+        it('Should not allow user with token to subscribe to random topic.', function (done) {
+            done();
+        });
+        it('Should not allow user with token to publish something to an unknown topic.', function (done) {
+            done();
+        });
+        it('Should not allow user different to the ubidots default to publish a value.', function (done) {
+            done();
+        });
+        it('Should not allow user different to the ubidots default to publish a last value.', function (done) {
+            done();
+        });
+    });
+});

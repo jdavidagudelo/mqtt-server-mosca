@@ -1,6 +1,6 @@
-mqtt = require("mqtt");
-var client  = mqtt.connect('mqtt://localhost', {username:'uvGTOVmD1GNnJNgWWQggSusDKtunSb', password:""});
-client.subscribe({"/v1.6/thg/uvGTOVmD1GNnJNgWWQggSusDKtunSb/label_ds/label_var/value": 1}, function(err, granted) {
+var mqtt = require("mqtt");
+var client  = mqtt.connect('mqtt://localhost', {username:'c74qFmzI7ikTmZ3dFvF3e2hPEmCfu5', password:""});
+client.subscribe({"/v1.6/thg/c74qFmzI7ikTmZ3dFvF3e2hPEmCfu5/label_ds/label_var/value": 1}, function(err, granted) {
   console.log(err);
   console.log(granted);
 });

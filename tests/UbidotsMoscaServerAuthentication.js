@@ -1,11 +1,10 @@
-var server = require("../UbidotsMoscaServer");
 var assert = require('chai').assert;
 var pg = require('pg');
 var testsCount = 10;
 var mqtt = require("mqtt");
 var conString = "postgres://ubidots:ubidotsDevel@localhost/ubidots_devel1";
 var tokens = [];
-var tokensCount = 20;
+var tokensCount = 100;
 var tokensString = [];
 var invalidTokens = [];
 var tokensAuthenticated = [];
@@ -47,7 +46,6 @@ describe('Test Authentication', function () {
             if (err) {
                 return console.error('could not connect to postgres', err);
             }
-
             client.query("delete from apikey_token where id > 39;",
                     [],
                     function (err, result) {
@@ -55,11 +53,11 @@ describe('Test Authentication', function () {
                             return console.error('error running query', err);
                         }
                         for (var i = 0; i < tokensCount; i++) {
-                            var userId = 1;
+                            var userId = 37;
                             var token = randomToken();
                             (function (token) {
                                 client.query("insert into apikey_token(user_id, token, last_used, expires, name) values($1, $2, $3, $4, $5) RETURNING id;",
-                                        [userId, token, new Date(), true, "newName"],
+                                        [userId, token, new Date(), false, "newName"],
                                         function (err, result) {
                                             if (err) {
                                                 return console.error('error running query', err);

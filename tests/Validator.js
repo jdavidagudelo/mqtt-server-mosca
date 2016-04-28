@@ -1,15 +1,22 @@
-var server = require("../UbidotsMoscaServer");
+var server = require("../Validator");
 var assert = require('chai').assert;
 var util = require('util');
-var pg = require('pg');
-var testsCount = 100;
-String.prototype.repeat = function (num)
-{
-    return new Array(num + 1).join(this);
-};
+var testsCount = 20000;
+var MAX_UNICODE_CHAR = 65535;
+var regexValid = /.+/i;
 function randomToken() {
-    var n = Math.floor((Math.random() * 10)) + 1;
-    return Math.random().toString(36).slice(2).repeat(n).substring(0, 60);
+    var max = 100;
+    var n = Math.floor((Math.random() * max)) + 1;
+    var r = "";
+	var i = 0; 
+    while(i < n){
+        var x = String.fromCharCode(Math.floor((Math.random() * MAX_UNICODE_CHAR)) + 1);
+        if(regexValid.test(x)){
+            r += x;
+			i++;
+        }
+    }
+    return r;
 }
 describe('Token Validations', function () {
     describe('#Invalid Subscribe Value Token', function () {
@@ -22,6 +29,7 @@ describe('Token Validations', function () {
         it('Should return true for any randomly generated token.', function () {
             for (var i = 0; i < testsCount; i++) {
                 var token = randomToken();
+
                 assert.equal(true, server.validSubscribeValueToken(token));
             }
         });
@@ -168,7 +176,7 @@ describe('Topic Validations', function () {
             }
         });
     });
-    describe('#Valid Publish Last Value Topic', function () {
+    describe('#Valid Publish Value Topic', function () {
         it('Should return true for any string matching the regex.', function () {
             for (var i = 0; i < testsCount; i++) {
                 var dataSource = randomToken();
@@ -215,6 +223,7 @@ describe('Topic Validations', function () {
                 var variable = randomToken();
                 var token = randomToken();
                 var topic = util.format("/v1.6/thg/%s/%s/%s/value/lv", token, dataSource, variable);
+		if(!server.isPublishSubscribeLastValue(topic)){console.log(topic);}
                 assert.equal(true, server.isPublishSubscribeLastValue(topic));
             }
         });

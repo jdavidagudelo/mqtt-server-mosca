@@ -5,7 +5,7 @@ var SECURE_KEY = 'cert/ryans-key.pem';
 var SECURE_CERT =  'cert/ryans-cert.pem';
 var SECURE_CSR = 'cert/ryans-csr.pem';
 
-const options = {
+var options = {
   // These are necessary only if using the client certificate authentication
   key: fs.readFileSync(SECURE_KEY),
   cert: fs.readFileSync(SECURE_CERT),
