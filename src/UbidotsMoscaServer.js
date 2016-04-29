@@ -3,7 +3,9 @@ var mqtt = require("mqtt");
 var redis = require("redis");
 var request = require('request');
 var validator = require('./Validator');
-
+var MOSCA_DEFAULT_PORT = 1883;
+var MOSCA_REDIS_DATABASE = 12;
+var MOSCA_REDIS_DATABASE_PORT = 6379;
 /**
  * url of the broker.
  * @type String
@@ -52,8 +54,8 @@ redisClient.on("Error", redisError);
 var ascoltatore = {
     type: 'redis',
     redis: require('redis'),
-    db: 12,
-    port: 6379,
+    db: MOSCA_REDIS_DATABASE,
+    port: MOSCA_REDIS_DATABASE_PORT,
     return_buffers: true,
     host: "localhost"
 };
@@ -61,12 +63,19 @@ var ascoltatore = {
  * Mosca Settings.
  */
 var moscaSettings = {
-    port: 1883,
+    port: MOSCA_DEFAULT_PORT,
     backend: ascoltatore,
     persistence: {
         factory: mosca.persistence.Redis
     }
 };
+/**
+ * Tests if a user is valid.
+ * @param {type} username the token of the user.
+ * @param {type} client the client associated to the user.
+ * @param {type} authenticated true if the user is valid to ubidots, false otherwise.
+ * @param {type} callback the callback to return true or false.
+ */
 function validateUser(username, client, authenticated, callback) {
     if (username === validator.TOKEN_UBIDOTS) {
         redisClient.set("user:" + client.id, username);
@@ -188,10 +197,6 @@ function authorizePublish(client, topic, payload, callback) {
         callback(null, false);
     }
 }
-
-var server = new mosca.Server(moscaSettings);
-server.on('ready', setup);
-
 /**
  * Clears a client's data from the redis database.
  * @param {type} client
@@ -208,8 +213,6 @@ function clearClientData(client) {
         });
     }
 }
-
-server.on('clientDisconnected', clearClientData);
 
 /**
  * Removes any information stored in redis about a client that is just disconnected from the broker.
@@ -249,8 +252,6 @@ function clientConnected(client) {
 
 }
 
-server.on('clientConnected', clientConnected);
-
 /**
  * Subscribes a client to the redis database, to listen when last value is updated.
  * @param {type} topic The topic to which the client wants to subscribe to.
@@ -263,7 +264,7 @@ function subscribeClient(topic, client) {
     var userToken = x[3];
     var labelDataSource = x[4];
     var labelVariable = x[5];
-    var uri = encodeURI(translateUrl + labelDataSource + '/' + labelVariable + '/values?token=' + userToken);
+    var uri = encodeURI(translateUrl + labelDataSource + '/' + labelVariable + '/variable?token=' + userToken);
     var options = {
         method: 'GET',
         uri: uri
@@ -284,8 +285,6 @@ function subscribeClient(topic, client) {
         }
     });
 }
-
-server.on('subscribed', subscribeClient);
 
 /**
  * Publish the result of a message published to ubidots. It does something only when the topic
@@ -310,6 +309,14 @@ function publishToUbidots(packet, client, callback) {
     }
 }
 
+var server = new mosca.Server(moscaSettings);
+server.on('ready', setup);
+server.on('clientDisconnected', clearClientData);
+server.on('clientConnected', clientConnected);
+server.on('subscribed', subscribeClient);
+
+
+
 /**
  * This way the client must wait until the ubidots server replies.
  */
@@ -328,6 +335,7 @@ server.authorizeSubscribe = authorizeSubscribe;
  * @returns {undefined}
  */
 function setup() {
+    console.log("Mosca server running on port "+MOSCA_DEFAULT_PORT);
 }
 
 /**
@@ -349,7 +357,6 @@ function sendDataToTranslate(data, callback) {
             'content-type': 'application/json'
         }
     };
-
     request.post(options, function (error, response, body) {
         if (callback !== undefined && callback !== null) {
             callback();
