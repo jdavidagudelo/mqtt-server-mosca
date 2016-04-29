@@ -48,6 +48,7 @@ function randomToken() {
 
 describe('Test Authorization Publish', function () {
     beforeEach(function (done) {
+        tokens = [];
         for (var i = 0; i < tokensCount; i++) {
             tokens.push(randomToken());
         }
@@ -126,8 +127,8 @@ describe('Test Authorization Publish', function () {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
                         assert.notEqual(connack, null);
-                        var dataSource = randomToken();
-                        var variable = randomToken();
+                        var dataSource = randomUnicode();
+                        var variable = randomUnicode();
                         var topic = "/v1.6/thg/" + token + "/" + dataSource + "/" + variable + "/value/lv";
                         var dict = {};
                         dict[topic] = 1;
@@ -164,8 +165,8 @@ describe('Test Authorization Publish', function () {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
                         assert.notEqual(connack, null);
-                        var dataSource = randomToken();
-                        var variable = randomToken();
+                        var dataSource = randomUnicode();
+                        var variable = randomUnicode();
                         var topic = "/v1.6/thg/" + token + "/" + dataSource + "/" + variable + "/value";
                         var dict = {};
                         dict[topic] = 1;
@@ -199,8 +200,8 @@ describe('Test Authorization Publish', function () {
             var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
             client.on("connect", function (connack) {
                 assert.notEqual(connack, null);
-                var dataSource = randomToken();
-                var variable = randomToken();
+                var dataSource = randomUnicode();
+                var variable = randomUnicode();
                 var value = Math.random() * 100000;
                 var userToken = randomToken();
                 client.publish("/v1.6/thg/" + userToken + "/" + dataSource + "/" + variable + "/value/lv", value.toString(), {'qos': 1, 'retain': false}, function (error, response) {
@@ -226,12 +227,12 @@ describe('Test Authorization Publish', function () {
             var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
             client.on("connect", function (connack) {
                 assert.notEqual(connack, null);
-                var dataSource = randomToken();
-                var variable = randomToken();
+                var dataSource = randomUnicode();
+                var variable = randomUnicode();
                 var value = Math.random() * 100000;
                 var userToken = randomToken();
 
-                client.publish("/v1.6/thg/" + userToken + "/" + dataSource + "/" + variable + "/value/", value.toString(), {'qos': 1, 'retain': false}, function (error, response) {
+                client.publish("/v1.6/thg/" + userToken + "/" + dataSource + "/" + variable + "/value", value.toString(), {'qos': 1, 'retain': false}, function (error, response) {
                     assert.equal(response.qos, 1);
                     assert.equal(error, null);
                     client.end(true, function () {
@@ -259,8 +260,8 @@ describe('Test Authorization Publish', function () {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
                         assert.notEqual(connack, null);
-                        var dataSource = randomToken();
-                        var variable = randomToken();
+                        var dataSource = randomUnicode();
+                        var variable = randomUnicode();
                         var topic = "/v1.6/thg/" + "/" + dataSource + "/" + variable + "/value/post";
                         var dict = {};
                         dict[topic] = 1;
@@ -297,7 +298,7 @@ describe('Test Authorization Publish', function () {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
                         assert.notEqual(connack, null);
-                        var topic = randomToken();
+                        var topic = randomUnicode();
                         if (!validator.isPublishValuePostUrl(topic) && !validator.isPublishSubscribeValue(topic) &&
                                 !validator.isPublishSubscribeLastValue(topic)) {
                             var dict = {};
@@ -339,7 +340,7 @@ describe('Test Authorization Publish', function () {
                     client.on("connect", function (connack) {
                         assert.notEqual(connack, null);
                         var value = Math.random() * 100000;
-                        var topic = randomToken();
+                        var topic = randomUnicode();
                         if (!validator.isPublishValuePostUrl(topic) && !validator.isPublishSubscribeValue(topic) &&
                                 !validator.isPublishSubscribeLastValue(topic)) {
                             client.publish(topic, value.toString(), {'qos': 1, 'retain': false}, function (error, response) {
@@ -391,8 +392,8 @@ describe('Test Authorization Publish', function () {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
                         assert.notEqual(connack, null);
-                        var dataSource = randomToken();
-                        var variable = randomToken();
+                        var dataSource = randomUnicode();
+                        var variable = randomUnicode();
                         var value = Math.random() * 100000;
                         var userToken = randomToken();
                         client.publish("/v1.6/thg/" + userToken + "/" + dataSource + "/" + variable + "/value/", value.toString(), {'qos': 1, 'retain': false}, function (error, response) {
@@ -436,8 +437,8 @@ describe('Test Authorization Publish', function () {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
                         assert.notEqual(connack, null);
-                        var dataSource = randomToken();
-                        var variable = randomToken();
+                        var dataSource = randomUnicode();
+                        var variable = randomUnicode();
                         var value = Math.random() * 100000;
                         var userToken = randomToken();
                         client.publish("/v1.6/thg/" + userToken + "/" + dataSource + "/" + variable + "/value/lv", value.toString(), {'qos': 1, 'retain': false}, function (error, response) {

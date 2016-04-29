@@ -8,7 +8,7 @@ var TOKEN_UBIDOTS = 'JGZKrp356i2e67zSU86wfYKG7Y7nbink';
  * @type RegExp
  */
 //var publishSuscribeLastValueRegex = /\/v1.6\/thg\/[0-9a-z_]+\/[0-9a-z_]+\/[0-9a-z_]+\/value\/lv\/?/i;
-var publishSuscribeLastValueRegex = /\/v1.6\/thg\/.+\/.+\/.+\/value\/lv\/?/;
+var publishSuscribeLastValueRegex = /\/v1.6\/thg\/.+\/.+\/.+\/value\/lv/;
 /**
  * Regex to test a valid redis topic.
  * @type RegExp
@@ -19,14 +19,14 @@ var regexRedisTopic = /rt\/variables\/[a-z0-9_]+\/last_value/i;
  * @type RegExp
  */
 //var publishValueRegex = /\/v1.6\/thg\/[0-9a-z_]+\/[0-9a-z_]+\/value\/post\/?/i;
-var publishValueRegex = /\/v1.6\/thg\/.+\/.+\/value\/post\/?/;
+var publishValueRegex = /\/v1.6\/thg\/.+\/.+\/value\/post/;
 
 /**
  * Regex to test a valid subscribe or publish value topic.
  * @type RegExp
  */
 //var publishSuscribeValueRegex = /\/v1.6\/thg\/[0-9a-z_]+\/[0-9a-z_]+\/[0-9a-z_]+\/value\/?/i;
-var publishSuscribeValueRegex = /\/v1.6\/thg\/.+\/.+\/.+\/value\/?/;
+var publishSuscribeValueRegex = /\/v1.6\/thg\/.+\/.+\/.+\/value/;
 /**
  * Indicates if the user with the specific token can
  * publish to the value post topic.

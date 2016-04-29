@@ -1,6 +1,5 @@
 var mosca = require('mosca');
 var mqtt = require("mqtt");
-var pg = require('pg');
 var redis = require("redis");
 var request = require('request');
 var validator = require('./Validator');
@@ -98,7 +97,7 @@ function validateUser(username, client, authenticated, callback) {
  * the connection is terminated.
  */
 var authenticate = function (client, username, password, callback) {
-    var uri = encodeURI(ubidotsDatasourcesUrl+"?token="+username);
+    var uri = encodeURI(ubidotsDatasourcesUrl + "?token=" + username);
     var options = {
         method: 'GET',
         uri: uri
@@ -350,6 +349,7 @@ function sendDataToTranslate(data, callback) {
             'content-type': 'application/json'
         }
     };
+
     request.post(options, function (error, response, body) {
         if (callback !== undefined && callback !== null) {
             callback();
@@ -418,8 +418,8 @@ function receiveRedisMessage(channel, message) {
                 redisClient.get('topic:' + variableId + ":" + token, function (error, topic) {
                     if (validator.isPublishSubscribeValue(topic)) {
                         publishLastValue(topic, message);
-                    } else if (isPublishSubscribeLastValue(topic)) {
-                        var data = JSON.parse(message.toString());
+                    } else if (validator.isPublishSubscribeLastValue(topic)) {
+                        var data = JSON.parse(message);
                         var value = data.value;
                         if (value !== null && value !== undefined) {
                             publishLastValue(topic, value.toString());
@@ -444,15 +444,6 @@ function publishLastValue(topic, value) {
     client.publish(topic, value, {'qos': 1, 'retain': false}, function (error, response) {
         client.end();
     });
+    client.on("error", function (error) {
+    });
 }
-/**
- * Exporting functions to perform unit testing.
- */
-exports.authenticate = authenticate;
-exports.authorizePublish = authorizePublish;
-exports.authorizeSubscribe = authorizeSubscribe;
-exports.publishLastValue = publishLastValue;
-exports.publishValue = publishValue;
-exports.removeRedisSubscribeInfo = removeRedisSubscribeInfo;
-exports.sendDataToTranslate = sendDataToTranslate;
-exports.subscribeToRedisLastValue = subscribeToRedisLastValue;

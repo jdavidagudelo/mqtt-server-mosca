@@ -44,6 +44,7 @@ function getInvalidToken() {
 
 describe('Test Authentication', function () {
     beforeEach(function (done) {
+        tokens = [];
         for (var i = 0; i < tokensCount; i++) {
             tokens.push(randomToken());
         }
@@ -78,17 +79,21 @@ describe('Test Authentication', function () {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
                         assert.notEqual(null, connack);
-                        count++;
-                        if (count >= tokens.length) {
-                            done();
-                        }
+                        client.end(true, function () {
+                            count++;
+                            if (count >= tokensCount) {
+                                done();
+                            }
+                        });
                     });
                     client.on("error", function (error) {
                         assert.equal(error, null);
-                        count++;
-                        if (count >= tokens.length) {
-                            done();
-                        }
+                        client.end(true, function () {
+                            count++;
+                            if (count >= tokensCount) {
+                                done();
+                            }
+                        });
                     });
                 })(token);
             }
@@ -100,11 +105,15 @@ describe('Test Authentication', function () {
             var client = mqtt.connect('mqtt://localhost', {username: null, password: ""});
             client.on("connect", function (connack) {
                 assert.equal(null, connack);
-                done();
+                client.end(true, function () {
+                    done();
+                });
             });
             client.on("error", function (error) {
                 assert.notEqual(error, null);
-                done();
+                client.end(true, function () {
+                    done();
+                });
             });
         });
         it('Should Not Allow Succesful Authentication To Non Existing Tokens.', function (done) {
