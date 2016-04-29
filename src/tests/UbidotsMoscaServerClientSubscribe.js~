@@ -4,6 +4,7 @@ var redis = require('redis');
 var request = require('request');
 var server = require('../UbidotsMoscaServer.js');
 var assert = require('chai').assert;
+var testsCount = 1;
 var mqtt = require("mqtt");
 var tokens = [];
 var tokensCount = 10;
@@ -11,6 +12,8 @@ var variables = {};
 var ubidotsRedisClient = redis.createClient();
 ubidotsRedisClient.select(server.redisSubscriberDatabase);
 var error = 1e-9;
+var translateUrl = 'http://localhost:8087/api/v1.6/thg/';
+var ubidotsDatasourcesUrl = 'http://localhost:8087/api/v1.6/datasources/';
 var invalidUnicodeArray = ['\t', '\n', '\x0b', '\x0c', '\r', '\x1c', '\x1d', '\x1e', '\x1f',
     ' ', '\x85', '\xa0', '\u1680', '\u180e', '\u2000', '\u2001', '\u2002',
     '\u2003', '\u2004', '\u2005', '\u2006', '\u2007', '\u2008', '\u2009',

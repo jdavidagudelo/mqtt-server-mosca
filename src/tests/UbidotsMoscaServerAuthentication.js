@@ -80,7 +80,7 @@ describe('Test Authentication', function () {
                         assert.notEqual(null, connack);
                         client.end(true, function () {
                             count++;
-                            if (count === tokensCount) {
+                            if (count >= tokensCount) {
                                 done();
                             }
                         });
@@ -89,7 +89,7 @@ describe('Test Authentication', function () {
                         assert.equal(error, null);
                         client.end(true, function () {
                             count++;
-                            if (count === tokensCount) {
+                            if (count >= tokensCount) {
                                 done();
                             }
                         });
@@ -126,17 +126,19 @@ describe('Test Authentication', function () {
                         assert.equal(null, connack);
                         client.end(true, function () {
                             count++;
-                            if (count === testsCount) {
+                            if (count >= testsCount) {
                                 done();
                             }
                         });
                     });
                     client.on("error", function (error) {
                         assert.notEqual(error, null);
-                        count++;
-                        if (count === testsCount) {
-                            done();
-                        }
+                        client.end(true, function () {
+                            count++;
+                            if (count >= testsCount) {
+                                done();
+                            }
+                        });
                     });
                 })(token);
             }
