@@ -5,25 +5,11 @@ Install node version 0.10.42:
 
 Install Mosca and required libraries with npm:
 
-    npm install mosca bunyan -g
-    npm install memdown
-    npm install mqtt
-
-install redis client:
-
-    npm install redis
-
-Install postgres client:
-
     npm install pg
 
-Install request:
+Install dependences:
 
-    npm install request
-    
-Install Mocha:
-
-    npm install -g mocha
+    npm install
     
 To run server:
 
