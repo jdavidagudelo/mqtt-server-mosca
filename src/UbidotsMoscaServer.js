@@ -15,6 +15,8 @@ var mqttServerUrl = 'mqtt://localhost';
  * @type String
  */
 var translateUrl = 'http://localhost:8087/api/v1.6/thg/';
+
+var ubidotsDatasourcesUrl = 'http://localhost:8087/api/v1.6/datasources/';
 /**
  * ID of the redis database used to store information required by the broker.
  * @type Number
@@ -31,16 +33,6 @@ var redisClient = redis.createClient();
  */
 var redisSubscriber = redis.createClient();
 var redisSubscriberDatabase = 0;
-/**
- * connection string to the ubidots database, used to get tokens and user's ids.
- * @type String
- */
-var conString = "postgres://ubidots:ubidotsDevel@localhost/ubidots_devel1";
-/**
- * token time to live used to validate authentication
- * @type Number
- */
-var tokenSeconds = 21600;
 redisClient.select(redisDatabase);
 redisSubscriber.select(redisSubscriberDatabase);
 
@@ -76,7 +68,24 @@ var moscaSettings = {
         factory: mosca.persistence.Redis
     }
 };
-
+function validateUser(username, client, authenticated, callback) {
+    if (username === validator.TOKEN_UBIDOTS) {
+        redisClient.set("user:" + client.id, username);
+        callback(null, true);
+    } else if (!authenticated) {
+        callback(null, false);
+    } else {
+        if (client !== undefined && client !== null && client.id !== 'retained') {
+            //user:<clientId> contains the token of the client
+            redisClient.set("user:" + client.id, username);
+            //tokens:<token> set of all the clients with a specified token. 
+            redisClient.sadd("tokens:" + username, client.id);
+            callback(null, true);
+        } else {
+            callback(null, false);
+        }
+    }
+}
 /**
  * Authennticates that a client is allowed to connect to the broker.
  * @param {type} client the client that wants to connect to the broker.
@@ -89,39 +98,14 @@ var moscaSettings = {
  * the connection is terminated.
  */
 var authenticate = function (client, username, password, callback) {
-    pg.connect(conString, function (err, postgresClient, done) {
-        if (err) {
-            return console.error('Error fetching client from pool', err);
-        }
-        var now = new Date();
-        var limit = new Date((now.getTime() - tokenSeconds * 1000));
-        postgresClient.query("SELECT * from apikey_token where token = $1 and (expires = $2 or last_used >= $3);",
-                [username, false, limit], function (err, result) {
-            done();
-            if (err) {
-                return console.error('error running query', err);
-            }
-            if (username === validator.TOKEN_UBIDOTS) {
-                redisClient.set("user:" + client.id, username);
-                callback(null, true);
-            } else if (result.rows.length <= 0) {
-                callback(null, false);
-            } else {
-                if (client !== undefined && client !== null && client.id !== 'retained') {
-                    //user:<clientId> contains the token of the client
-                    redisClient.set("user:" + client.id, username);
-                    //user_tokens:<userId> set of all the tokens a user with userId is connected with.
-                    redisClient.sadd("user_tokens:" + result.rows[0]['user_id'], username);
-                    //user_id:<clientId> contains the userId of the client
-                    redisClient.set("user_id:" + client.id, result.rows[0]['user_id']);
-                    //tokens:<token> set of all the clients with a specified token. 
-                    redisClient.sadd("tokens:" + username, client.id);
-                    callback(null, true);
-                } else {
-                    callback(null, false);
-                }
-            }
-        });
+    var uri = encodeURI(ubidotsDatasourcesUrl+"?token="+username);
+    var options = {
+        method: 'GET',
+        uri: uri
+    };
+    request.get(options, function (error, response, body) {
+        var authenticated = response !== null && response !== undefined && response.statusCode === 200;
+        validateUser(username, client, authenticated, callback);
     });
 };
 
@@ -217,15 +201,9 @@ function clearClientData(client) {
     if (client !== null && client !== undefined) {
         redisClient.get("user:" + client.id, function (err, username) {
             redisClient.del("user:" + client.id);
-            redisClient.get("user_id:" + client.id, function (err, user_id) {
-                redisClient.del("user_id:" + client.id);
-                redisClient.srem("tokens:" + username, client.id);
-                redisClient.scard("tokens:" + username, function (error, result) {
-                    removeRedisSubscribeInfo(client, username, result === 0);
-                    if (result === 0) {
-                        redisClient.srem("user_tokens:" + user_id, username);
-                    }
-                });
+            redisClient.srem("tokens:" + username, client.id);
+            redisClient.scard("tokens:" + username, function (error, result) {
+                removeRedisSubscribeInfo(client, username, result === 0);
             });
 
         });
@@ -291,8 +269,8 @@ function subscribeClient(topic, client) {
         method: 'GET',
         uri: uri
     };
-    request(options, function (error, response, body) {
-        if (response !== undefined && response.statusCode === 200) {
+    request.get(options, function (error, response, body) {
+        if (response !== undefined && response !== null && response.statusCode === 200) {
             var json = JSON.parse(body);
             var variableId = json.id;
             if (variableId !== null && variableId !== undefined) {
@@ -326,22 +304,22 @@ function publishToUbidots(packet, client, callback) {
                 }
             });
         }
-    }else{
-	if(callback !== undefined && callback !== null){
-        	callback(null);
-	}
+    } else {
+        if (callback !== undefined && callback !== null) {
+            callback(null);
+        }
     }
 }
 
 /**
-* This way the client must wait until the ubidots server replies.
-*/
+ * This way the client must wait until the ubidots server replies.
+ */
 //server.published = publishToUbidots;
 
 /**
-* This way the client requests, receives ack and the processing is performed
-* asynch.
-*/
+ * This way the client requests, receives ack and the processing is performed
+ * asynch.
+ */
 server.on('published', publishToUbidots);
 server.authenticate = authenticate;
 server.authorizePublish = authorizePublish;
@@ -372,10 +350,10 @@ function sendDataToTranslate(data, callback) {
             'content-type': 'application/json'
         }
     };
-    request(options, function (error, response, body) {
-	if(callback !== undefined && callback !== null){
-        	callback();
-	}
+    request.post(options, function (error, response, body) {
+        if (callback !== undefined && callback !== null) {
+            callback();
+        }
     });
 }
 /**
@@ -478,4 +456,3 @@ exports.publishValue = publishValue;
 exports.removeRedisSubscribeInfo = removeRedisSubscribeInfo;
 exports.sendDataToTranslate = sendDataToTranslate;
 exports.subscribeToRedisLastValue = subscribeToRedisLastValue;
-

@@ -1,18 +1,14 @@
-var server = require("../Validator");
+var validator = require("../Validator");
+var sinon = require("sinon");
+var request = require('request');
+var server = require('../UbidotsMoscaServer.js');
 var assert = require('chai').assert;
-var pg = require('pg');
-var testsCount = 10000;
+var testsCount = 100;
 var mqtt = require("mqtt");
-var conString = "postgres://ubidots:ubidotsDevel@localhost/ubidots_devel1";
 var tokens = [];
 var tokensCount = 100;
-var tokensString = [];
-var invalidTokens = [];
-var tokensAuthorizedPublish = [];
-var invalidTestsCount = testsCount;
-var validTokensDone = false;
-var invalidTokensDone = false;
-var currentToken = "c74qFmzI7ikTmZ3dFvF3e2hPEmCfu5";
+var translateUrl = 'http://localhost:8087/api/v1.6/thg/';
+var ubidotsDatasourcesUrl = 'http://localhost:8087/api/v1.6/datasources/';
 var invalidUnicodeArray = ['\t', '\n', '\x0b', '\x0c', '\r', '\x1c', '\x1d', '\x1e', '\x1f',
                   ' ', '\x85', '\xa0', '\u1680', '\u180e', '\u2000', '\u2001', '\u2002',
                   '\u2003', '\u2004', '\u2005', '\u2006', '\u2007', '\u2008', '\u2009',
@@ -36,52 +32,50 @@ function randomUnicode() {
     }
     return r;
 }
+
+function getInvalidToken() {
+    var token = randomToken();
+    while (tokens.indexOf(token) >= 0) {
+        token = randomToken();
+    }
+    return token;
+}
+
 function randomToken() {
     var n = Math.floor((Math.random() * 10)) + 1;
     return Math.random().toString(36).slice(2).repeat(n).substring(0, 60);
 }
-function updateTokens(token, maxTokens, client, done) {
-    tokens.push(token);
-    if (tokens.length === maxTokens) {
-        client.end();
-        done();
-    }
-}
-
-function removeToken(result, client, done) {
-    tokens.pop(result);
-    if (tokens.length === 0) {
-        client.end();
-        tokensString = [];
-        done();
-    }
-}
-function updateClient(done) {
-    var userId = -1;
-    var client = new pg.Client(conString);
-    client.connect(function (err) {
-        if (err) {
-            return console.error('could not connect to postgres', err);
-        }
-        var token = randomToken();
-        currentToken = token;
-        client.query("insert into apikey_token(user_id, token, last_used, expires, name) values($1, $2, $3, $4, $5) RETURNING id;",
-                [userId, token, new Date(), false, "newName"],
-                function (err, result) {
-                    if (err) {
-                        return console.error('error running query', err);
-                    }
-                    done();
-                });
-    });
-}
 
 describe('Test Authorization Publish', function () {
     beforeEach(function (done) {
+        for (var i = 0; i < tokensCount; i++) {
+            tokens.push(randomToken());
+        }
+        sinon.stub(request, 'get', function (options, callback) {
+            if (options.method === 'GET') {
+                var uri = options.uri;
+                var token = uri.substring(uri.indexOf('=') + 1);
+                var response = {};
+                if (tokens.indexOf(token) < 0) {
+                    response.statusCode = 403;
+                } else {
+                    response.statusCode = 200;
+                }
+                var body = JSON.stringify({id:null});
+                callback(null, response, body);
+            }
+        });
+        sinon.stub(request, 'post', function(options, callback){
+            if (options.method === 'POST') {
+                callback(null, {statusCode: 200}, null);
+            }
+        });
         done();
     });
 
     afterEach(function (done) {
+        request.get.restore();
+        request.post.restore();
         done();
     });
 
@@ -90,7 +84,7 @@ describe('Test Authorization Publish', function () {
             this.timeout(0);
             var count = 0;
             for (var i = 0; i < tokensCount; i++) {
-                var token = currentToken;
+                var token = tokens[i];
                 (function (token) {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
@@ -127,7 +121,7 @@ describe('Test Authorization Publish', function () {
             this.timeout(0);
             var count = 0;
             for (var i = 0; i < tokensCount; i++) {
-                var token = currentToken;
+                var token = tokens[i];
                 (function (token) {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
@@ -165,7 +159,7 @@ describe('Test Authorization Publish', function () {
             this.timeout(0);
             var count = 0;
             for (var i = 0; i < tokensCount; i++) {
-                var token = currentToken;
+                var token = tokens[i];
                 (function (token) {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
@@ -201,7 +195,7 @@ describe('Test Authorization Publish', function () {
         });
         it('Should allow ubidots default user to publish a last value.', function (done) {
             this.timeout(0);
-            var token = server.TOKEN_UBIDOTS;
+            var token = validator.TOKEN_UBIDOTS;
             var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
             client.on("connect", function (connack) {
                 assert.notEqual(connack, null);
@@ -228,7 +222,7 @@ describe('Test Authorization Publish', function () {
         });
         it('Should allow ubidots default user to publish a value.', function (done) {
             this.timeout(0);
-            var token = server.TOKEN_UBIDOTS;
+            var token = validator.TOKEN_UBIDOTS;
             var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
             client.on("connect", function (connack) {
                 assert.notEqual(connack, null);
@@ -260,7 +254,7 @@ describe('Test Authorization Publish', function () {
             this.timeout(0);
             var count = 0;
             for (var i = 0; i < tokensCount; i++) {
-                var token = currentToken;
+                var token = tokens[i];
                 (function (token) {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
@@ -298,14 +292,14 @@ describe('Test Authorization Publish', function () {
             this.timeout(0);
             var count = 0;
             for (var i = 0; i < tokensCount; i++) {
-                var token = currentToken;
+                var token = tokens[i];
                 (function (token) {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
                         assert.notEqual(connack, null);
                         var topic = randomToken();
-                        if (!server.isPublishValuePostUrl(topic) && !server.isPublishSubscribeValue(topic) &&
-                                !server.isPublishSubscribeLastValue(topic)) {
+                        if (!validator.isPublishValuePostUrl(topic) && !validator.isPublishSubscribeValue(topic) &&
+                                !validator.isPublishSubscribeLastValue(topic)) {
                             var dict = {};
                             dict[topic] = 1;
                             client.subscribe(dict, function (error, granted) {
@@ -339,15 +333,15 @@ describe('Test Authorization Publish', function () {
             this.timeout(0);
             var count = 0;
             for (var i = 0; i < tokensCount; i++) {
-                var token = currentToken;
+                var token = tokens[i];
                 (function (token) {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
                         assert.notEqual(connack, null);
                         var value = Math.random() * 100000;
                         var topic = randomToken();
-                        if (!server.isPublishValuePostUrl(topic) && !server.isPublishSubscribeValue(topic) &&
-                                !server.isPublishSubscribeLastValue(topic)) {
+                        if (!validator.isPublishValuePostUrl(topic) && !validator.isPublishSubscribeValue(topic) &&
+                                !validator.isPublishSubscribeLastValue(topic)) {
                             client.publish(topic, value.toString(), {'qos': 1, 'retain': false}, function (error, response) {
                                 assert.notEqual(response.qos, 1);
                                 assert.notEqual(error, null);
@@ -392,7 +386,7 @@ describe('Test Authorization Publish', function () {
             this.timeout(0);
             var count = 0;
             for (var i = 0; i < tokensCount; i++) {
-                var token = currentToken;
+                var token = tokens[i];
                 (function (token) {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
@@ -437,7 +431,7 @@ describe('Test Authorization Publish', function () {
             this.timeout(0);
             var count = 0;
             for (var i = 0; i < tokensCount; i++) {
-                var token = currentToken;
+                var token = tokens[i];
                 (function (token) {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
