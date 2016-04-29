@@ -63,7 +63,6 @@ describe('Test Authentication', function () {
         });
         done();
     });
-
     afterEach(function (done) {
         request.get.restore();
         done();
@@ -81,7 +80,7 @@ describe('Test Authentication', function () {
                         assert.notEqual(null, connack);
                         client.end(true, function () {
                             count++;
-                            if (count >= tokensCount) {
+                            if (count === tokensCount) {
                                 done();
                             }
                         });
@@ -90,7 +89,7 @@ describe('Test Authentication', function () {
                         assert.equal(error, null);
                         client.end(true, function () {
                             count++;
-                            if (count >= tokensCount) {
+                            if (count === tokensCount) {
                                 done();
                             }
                         });
@@ -125,15 +124,17 @@ describe('Test Authentication', function () {
                     var client = mqtt.connect('mqtt://localhost', {username: token, password: ""});
                     client.on("connect", function (connack) {
                         assert.equal(null, connack);
-                        count++;
-                        if (count >= testsCount) {
-                            done();
-                        }
+                        client.end(true, function () {
+                            count++;
+                            if (count === testsCount) {
+                                done();
+                            }
+                        });
                     });
                     client.on("error", function (error) {
                         assert.notEqual(error, null);
                         count++;
-                        if (count >= testsCount) {
+                        if (count === testsCount) {
                             done();
                         }
                     });

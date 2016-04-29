@@ -447,3 +447,5 @@ function publishLastValue(topic, value) {
     client.on("error", function (error) {
     });
 }
+
+exports.ubidotsDatasourcesUrl = ubidotsDatasourcesUrl;
