@@ -108,9 +108,13 @@ var authenticate = function (client, username, password, callback) {
                 callback(null, false);
             } else {
                 if (client !== undefined && client !== null && client.id !== 'retained') {
+                    //user:<clientId> contains the token of the client
                     redisClient.set("user:" + client.id, username);
+                    //user_tokens:<userId> set of all the tokens a user with userId is connected with.
                     redisClient.sadd("user_tokens:" + result.rows[0]['user_id'], username);
+                    //user_id:<clientId> contains the userId of the client
                     redisClient.set("user_id:" + client.id, result.rows[0]['user_id']);
+                    //tokens:<token> set of all the clients with a specified token. 
                     redisClient.sadd("tokens:" + username, client.id);
                     callback(null, true);
                 } else {
@@ -295,6 +299,7 @@ function subscribeClient(topic, client) {
                 redisClient.get("user:" + client.id, function (err, token) {
                     if (token !== null) {
                         subscribeToRedisLastValue(variableId, token, client.id);
+                        //topic:<variableId>:<token> contains the topic with the specified variableId and token.
                         redisClient.set("topic:" + variableId + ":" + token, topic);
                     }
                 });
@@ -369,7 +374,7 @@ function sendDataToTranslate(data, callback) {
     };
     request(options, function (error, response, body) {
 	if(callback !== undefined && callback !== null){
-        	callback("Nada de nada mas nada");
+        	callback();
 	}
     });
 }
