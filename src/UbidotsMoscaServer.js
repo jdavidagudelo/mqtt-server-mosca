@@ -106,7 +106,6 @@ function validateUser(username, client, authenticated, callback) {
  * the connection is terminated.
  */
 var authenticate = function (client, username, password, callback) {
-   
     var uri = encodeURI(ubidotsDatasourcesUrl + "?token=" + username);
     var options = {
         method: 'GET',
@@ -170,6 +169,15 @@ function authorizePublish(client, topic, payload, callback) {
         if (validator.isPublishValuePostUrl(topic)) {
             redisClient.get("user:" + client.id, function (err, reply) {
                 if (validator.validPublishValuePostToken(reply)) {
+                    callback(null, true);
+                } else {
+                    callback(null, false);
+                }
+            });
+        }
+        else if (validator.isPublishCollectionValues(topic)) {
+            redisClient.get("user:" + client.id, function (err, reply) {
+                if (validator.validPublishCollectionPostToken(reply)) {
                     callback(null, true);
                 } else {
                     callback(null, false);
@@ -303,6 +311,14 @@ function publishToUbidots(packet, client, callback) {
                 }
             });
         }
+    } else if (validator.isPublishCollectionValues(packet.topic)) {
+        if (client !== undefined) {
+            redisClient.get("user:" + client.id, function (err, reply) {
+                if (validator.validPublishCollectionPostToken(reply)) {
+                    publishCollection(packet, reply, callback);
+                }
+            });
+        }
     } else {
         if (callback !== undefined && callback !== null) {
             callback(null);
@@ -315,9 +331,6 @@ server.on('ready', setup);
 server.on('clientDisconnected', clearClientData);
 server.on('clientConnected', clientConnected);
 server.on('subscribed', subscribeClient);
-
-
-
 /**
  * This way the client must wait until the ubidots server replies.
  */
@@ -336,9 +349,24 @@ server.authorizeSubscribe = authorizeSubscribe;
  * @returns {undefined}
  */
 function setup() {
-    console.log("Mosca server running on port "+MOSCA_DEFAULT_PORT);
+    console.log("Mosca server running on port " + MOSCA_DEFAULT_PORT);
 }
-
+function sendCollectionToTranslate(data, callback) {
+    var uri = encodeURI(translateUrl + data.dataSource + '/values?token=' + data.token);
+    var options = {
+        method: 'POST',
+        uri: uri,
+        body: data.value,
+        headers: {
+            'content-type': 'application/json'
+        }
+    };
+    request.post(options, function (error, response, body) {
+        if (callback !== undefined && callback !== null) {
+            callback();
+        }
+    });
+}
 /**
  * Send a value to the translate service using a post web service.
  * @param {type} data data is a dictionary with the dataSource, variable, token and value keys.
@@ -378,7 +406,13 @@ function publishValue(packet, token, callback) {
     var data = {dataSource: labelDataSource, variable: labelVariable, value: value, token: token};
     sendDataToTranslate(data, callback);
 }
-
+function publishCollection(packet, token, callback) {
+    var x = packet.topic.toString().split("/");
+    var labelDataSource = x[3];
+    var value = packet.payload.toString();
+    var data = {dataSource: labelDataSource, value: value, token: token};
+    sendCollectionToTranslate(data, callback);
+}
 /**
  * Gets the topic to which to subscribe to the redis of ubidots
  * in order to get updates about the specified variable.

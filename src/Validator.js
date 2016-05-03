@@ -15,6 +15,11 @@ var publishSuscribeLastValueRegex = /\/v1.6\/thg\/.+\/.+\/.+\/value\/lv/;
  */
 var regexRedisTopic = /rt\/variables\/[a-z0-9_]+\/last_value/i;
 /**
+ * Regex to publish a collection of values from a datasource.
+ * @type RegExp
+ */
+var publishCollectionValuesRegex = /\/v1.6\/thg\/.+\/values\/post/;
+/**
  * Regex to test a valid publish value topic.
  * @type RegExp
  */
@@ -72,7 +77,22 @@ function validSubscribeValueToken(token) {
 function validPublishValueToken(token) {
     return token !== null && token !== undefined && token === TOKEN_UBIDOTS;
 }
-
+function validPublishCollectionPostToken(token) {
+    return token !== null && token !== undefined;
+}
+/**
+ * Determines if the corresponds to the post several variables from a datasource topic.
+ * @param {type} topic the topic to be tested.
+ * @returns {Boolean} true if the topic is a publish values from datasource topic, false otherwise.
+ */
+function isPublishCollectionValues(topic){
+    
+    var r = publishCollectionValuesRegex.exec(topic);
+    if (r === null || r === undefined) {
+        return false;
+    }
+    return r[0] === r['input'];
+}
 /**
  * Determines if the topic corresponds to the subscribe or publish the last value.
  * @param {type} topic the topic to be tested.
@@ -135,3 +155,5 @@ exports.validPublishValueToken = validPublishValueToken;
 exports.validSubscribeLastValueToken = validSubscribeLastValueToken;
 exports.validSubscribeValueToken = validSubscribeValueToken;
 exports.isValidRedisTopic = isValidRedisTopic;
+exports.isPublishCollectionValues = isPublishCollectionValues;
+exports.validPublishCollectionPostToken = validPublishCollectionPostToken;

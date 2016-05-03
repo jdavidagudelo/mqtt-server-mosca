@@ -106,11 +106,6 @@ function validateUser(username, client, authenticated, callback) {
  * the connection is terminated.
  */
 var authenticate = function (client, username, password, callback) {
-    if(username === validator.TOKEN_UBIDOTS){
-        redisClient.set("user:" + client.id, username);
-        callback(null, true);
-        return; 
-    }
     var uri = encodeURI(ubidotsDatasourcesUrl + "?token=" + username);
     var options = {
         method: 'GET',
@@ -453,6 +448,7 @@ redisSubscriber.on("message", receiveRedisMessage);
  */
 function publishLastValue(topic, value) {
     var client = mqtt.connect(mqttServerUrl, {username: validator.TOKEN_UBIDOTS, password: ""});
+	console.log("Publishing to "+topic);
     client.publish(topic, value, {'qos': 1, 'retain': false}, function (error, response) {
         client.end();
     });

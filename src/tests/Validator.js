@@ -13,7 +13,7 @@ function randomToken() {
         var x = String.fromCharCode(Math.floor((Math.random() * MAX_UNICODE_CHAR)) + 1);
         if(regexValid.test(x)){
             r += x;
-			i++;
+            i++;
         }
     }
     return r;
@@ -136,6 +136,13 @@ describe('Topic Validations', function () {
                 assert.equal(false, server.isPublishValuePostUrl(topic));
             }
         });
+        it('Should return false for any string matching the regex of post collections.', function () {
+            for (var i = 0; i < testsCount; i++) {
+                var dataSource = randomToken();
+                var topic = "/v1.6/thg/" + dataSource + "/values/post";
+                assert.equal(false, server.isPublishValuePostUrl(topic));
+            }
+        });
     });
     describe('#Valid Publish Value Post Topic', function () {
         it('Should return true for any string matching the regex.', function () {
@@ -144,6 +151,15 @@ describe('Topic Validations', function () {
                 var variable = randomToken();
                 var topic = util.format("/v1.6/thg/%s/%s/value/post", dataSource, variable);
                 assert.equal(true, server.isPublishValuePostUrl(topic));
+            }
+        });
+    });
+    describe('#Valid Publish Collection Post Topic', function () {
+        it('Should return true for any string matching the regex.', function () {
+            for (var i = 0; i < testsCount; i++) {
+                var dataSource = randomToken();
+                var topic = util.format("/v1.6/thg/%s/values/post", dataSource);
+                assert.equal(true, server.isPublishCollectionValues(topic));
             }
         });
     });
@@ -172,6 +188,13 @@ describe('Topic Validations', function () {
                 var dataSource = randomToken();
                 var variable = randomToken();
                 var topic = util.format("/v1.6/thg/%s/%s/value/post", dataSource, variable);
+                assert.equal(false, server.isPublishSubscribeValue(topic));
+            }
+        });
+        it('Should return false for any string matching the regex of post collections.', function () {
+            for (var i = 0; i < testsCount; i++) {
+                var dataSource = randomToken();
+                var topic = "/v1.6/thg/" + dataSource + "/values/post";
                 assert.equal(false, server.isPublishSubscribeValue(topic));
             }
         });
@@ -212,6 +235,13 @@ describe('Topic Validations', function () {
                 var dataSource = randomToken();
                 var variable = randomToken();
                 var topic = util.format("/v1.6/thg/%s/%s/value/post/", dataSource, variable);
+                assert.equal(false, server.isPublishSubscribeLastValue(topic));
+            }
+        });
+        it('Should return false for any string matching the regex of post collections.', function () {
+            for (var i = 0; i < testsCount; i++) {
+                var dataSource = randomToken();
+                var topic = "/v1.6/thg/" + dataSource + "/values/post";
                 assert.equal(false, server.isPublishSubscribeLastValue(topic));
             }
         });

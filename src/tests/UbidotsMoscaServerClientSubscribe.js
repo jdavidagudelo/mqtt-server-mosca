@@ -35,14 +35,6 @@ function randomUnicode() {
     return r;
 }
 
-function getInvalidToken() {
-    var token = randomToken();
-    while (tokens.indexOf(token) >= 0) {
-        token = randomToken();
-    }
-    return token;
-}
-
 function randomToken() {
     var n = Math.floor((Math.random() * 10)) + 1;
     return Math.random().toString(36).slice(2).repeat(n).substring(0, 60);
@@ -117,7 +109,7 @@ describe('Test Authorization Publish', function () {
                         client.end(true, function () {
                             count++;
                             if (count >= tokensCount) {
-                                
+
                                 done();
                             }
                         });
@@ -152,7 +144,7 @@ describe('Test Authorization Publish', function () {
             var count = 0;
             for (var i = 0; i < tokensCount; i++) {
                 var token = tokens[i];
-               (function (token) {
+                (function (token) {
                     var dataSource = randomUnicode();
                     var variable = randomUnicode();
                     var value = Math.random() * 100000;
@@ -166,17 +158,17 @@ describe('Test Authorization Publish', function () {
                             assert.equal(granted[0].qos, 1);
                             assert.equal(error, null);
                             var publisher = mqtt.connect('mqtt://localhost', {username: token, password: ""});
-                    publisher.on("connect", function (connack) {
-                        assert.notEqual(connack, null);
-                        var json = JSON.stringify({value: value});
-                        publisher.publish("/v1.6/thg/" + dataSource + "/" + variable + "/value/post", json, {'qos': 1, 'retain': false},
-                                function (error, response) {
-                                    assert.equal(response.qos, 1);
-                                    assert.equal(error, null);
-                                    publisher.end(true, function () {
-                                    });
-                                });
-                    });
+                            publisher.on("connect", function (connack) {
+                                assert.notEqual(connack, null);
+                                var json = JSON.stringify({value: value});
+                                publisher.publish("/v1.6/thg/" + dataSource + "/" + variable + "/value/post", json, {'qos': 1, 'retain': false},
+                                        function (error, response) {
+                                            assert.equal(response.qos, 1);
+                                            assert.equal(error, null);
+                                            publisher.end(true, function () {
+                                            });
+                                        });
+                            });
                         });
                     });
                     client.on('message', function (topic, message, packet) {
@@ -199,7 +191,7 @@ describe('Test Authorization Publish', function () {
                             }
                         });
                     });
-                    
+
                 })(token);
             }
         });
