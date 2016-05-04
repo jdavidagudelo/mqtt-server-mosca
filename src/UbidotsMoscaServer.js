@@ -350,7 +350,19 @@ server.authorizeSubscribe = authorizeSubscribe;
  */
 function setup() {
     console.log("Mosca server running on port " + MOSCA_DEFAULT_PORT);
+    //flush redis database used by the broker, 
+    //data is invalid for all new clients.
+    redisClient.flushdb(function(error, response){
+    });
 }
+/**
+ * Send a collections of values to the ubidots API.
+ * @param {type} data data contains a list of objects with the  following keys:
+ * variable: the label of the variable. Is mandatory.
+ * timestamp: the timestamp of the value. Is optional.
+ * context: the context of the value. In case required. Is Optional.
+ * @param {type} callback callback that returns answer to the client.
+ */
 function sendCollectionToTranslate(data, callback) {
     var uri = encodeURI(translateUrl + data.dataSource + '/values?token=' + data.token);
     var options = {
@@ -393,7 +405,7 @@ function sendDataToTranslate(data, callback) {
     });
 }
 /**
- * Send a value to the translate service.
+ * Sends a value to the translate service.
  * @param {type} packet the packet published. Includes the topic and the payload.
  * @param {type} token the token of the user.
  * @param {type} callback callback to indicate the publication is succesful.
@@ -406,6 +418,12 @@ function publishValue(packet, token, callback) {
     var data = {dataSource: labelDataSource, variable: labelVariable, value: value, token: token};
     sendDataToTranslate(data, callback);
 }
+/**
+ * Sends a collection of values to the translate API.
+ * @param {type} packet the packet published. Includes topic and payload.
+ * @param {type} token thee token of the user.
+ * @param {type} callback optional callback to indicate success.
+ */
 function publishCollection(packet, token, callback) {
     var x = packet.topic.toString().split("/");
     var labelDataSource = x[3];
@@ -489,5 +507,4 @@ function publishLastValue(topic, value) {
     client.on("error", function (error) {
     });
 }
-
 exports.redisSubscriberDatabase = redisSubscriberDatabase;
